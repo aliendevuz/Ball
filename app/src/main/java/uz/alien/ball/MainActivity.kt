@@ -10,7 +10,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity() {
 
-  private lateinit var gameView: GameView
+  private lateinit var antiStress: AntiStress
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -20,11 +20,11 @@ class MainActivity : AppCompatActivity() {
     insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     insetsController.hide(WindowInsetsCompat.Type.systemBars())
 
-    gameView = GameView(this)
+    antiStress = AntiStress(this)
 
-    setContentView(gameView)
+    setContentView(antiStress)
 
-    ViewCompat.setOnApplyWindowInsetsListener(gameView) { v, insets ->
+    ViewCompat.setOnApplyWindowInsetsListener(antiStress) { v, insets ->
       val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
       v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
       insets
@@ -33,11 +33,11 @@ class MainActivity : AppCompatActivity() {
 
   override fun onStart() {
     super.onStart()
-    gameView.startSensor()
+    antiStress.startSensor()
   }
 
   override fun onStop() {
     super.onStop()
-    gameView.releaseResources()
+    antiStress.releaseResources()
   }
 }
