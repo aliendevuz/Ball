@@ -11,12 +11,16 @@ import android.hardware.SensorManager
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
+import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
 import android.view.WindowManager
+import kotlin.math.abs
 
-class AntiStress(context: Context, attrs: AttributeSet? = null) : View(context, attrs),
-  SensorEventListener {
+class AntiStress(context: Context, attrs: AttributeSet? = null) : View(context, attrs), SensorEventListener {
+
+  private val TAG = AntiStress::class.java.simpleName
 
   private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
   private var accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -39,7 +43,10 @@ class AntiStress(context: Context, attrs: AttributeSet? = null) : View(context, 
   private var ballY = 200f
   private var speedX = 0.0f
   private var speedY = 0.0f
+  private var tiltX = 0.0f
+  private var tiltY = 0.0f
   private val ballRadius = 50f
+  private val g = 0.98f / 2.0f
 
   private var w = 0f
   private var h = 0f
@@ -85,37 +92,53 @@ class AntiStress(context: Context, attrs: AttributeSet? = null) : View(context, 
   }
 
   private fun updatePhysics() {
+
     speedX *= 0.98f
     speedY *= 0.98f
+
+    val accelerationX = (tiltX / 8f) * g
+    speedX -= accelerationX * frameRate
+
+    val accelerationY = (tiltY / 8f) * g
+    speedY += accelerationY * frameRate
 
     ballX += speedX
     ballY += speedY
 
     if (ballX < ballRadius) {
       ballX = ballRadius
-      speedX = -speedX * 0.8f
+      speedX = -speedX * 0.5f
     }
     if (ballX > w - ballRadius) {
       ballX = w - ballRadius
-      speedX = -speedX * 0.8f
+      speedX = -speedX * 0.5f
     }
     if (ballY < ballRadius) {
       ballY = ballRadius
-      speedY = -speedY * 0.8f
+      speedY = -speedY * 0.5f
     }
     if (ballY > h - ballRadius) {
       ballY = h - ballRadius
-      speedY = -speedY * 0.8f
+      speedY = -speedY * 0.5f
     }
+  }
+
+  override fun onTouchEvent(event: MotionEvent): Boolean {
+    if (event.action == MotionEvent.ACTION_DOWN) {
+      speedX += tiltX * 16.0f
+      speedY -= tiltY * 16.0f
+    }
+    return true
   }
 
   override fun onSensorChanged(event: SensorEvent?) {
     if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+
       val rotation = windowManager.defaultDisplay.rotation
       val rawX = event.values[0]
       val rawY = event.values[1]
 
-      val tiltX = when (rotation) {
+      tiltX = when (rotation) {
         Surface.ROTATION_0 -> rawX
         Surface.ROTATION_90 -> -rawY
         Surface.ROTATION_180 -> -rawX
@@ -123,16 +146,13 @@ class AntiStress(context: Context, attrs: AttributeSet? = null) : View(context, 
         else -> rawX
       }
 
-      val tiltY = when (rotation) {
+      tiltY = when (rotation) {
         Surface.ROTATION_0 -> rawY
         Surface.ROTATION_90 -> rawX
         Surface.ROTATION_180 -> -rawY
         Surface.ROTATION_270 -> -rawX
         else -> rawY
       }
-
-      speedX -= tiltX * 1.2f
-      speedY += tiltY * 1.2f
     }
   }
 
